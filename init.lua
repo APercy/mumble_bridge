@@ -61,7 +61,6 @@ if minetest.request_insecure_environment then
         require = insecure_environment.require	
 
         --load modules
-        -- load namespace
         socket = require("socket")
         --reset changes
         require = old_require
