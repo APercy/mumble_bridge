@@ -11,7 +11,7 @@ local timer_context = 0
 
 local function get_server_info()
     local retVal = {}
-    retVal.address = "apercy.freemyip.com"
+    retVal.address = "your.server.address.here"
     retVal.port = "30000"
     return retVal
 end
