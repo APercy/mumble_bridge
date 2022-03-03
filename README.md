@@ -7,6 +7,7 @@ It can be tested using the command on linux "nc -u address 44000".
 So just type a username that is logged into the server and the "nc" will list positional data as the user moves.
 In this part of the mod was used the formatting pattern of the mod "minetest-mumble-wrapper", created by Elkien3.
 This plugin needs to be added to minetest.conf in the "secure.trusted_mods" list, as it uses a compiled socket library
+And you have to adjust the lines 14 and 15 for your server context. I'll try a more elegant way in future, I'm lazy today.
 
 The second part of the mod is a binary, which the source code is in the src directory for those who want to compile it for themselves.
 This binary connects to the UDP port created on the server by the mod in lua. Then it processes the formatted data and sends it to mumble's "Link" plugin.
