@@ -7,6 +7,7 @@ local udp = nil
 local data, msg_or_ip, port_or_nil
 local clients = {}
 local wait_timer = 0
+local timer_context = 0
 
 local function get_server_info()
     local retVal = {}
@@ -99,6 +100,8 @@ if minetest.request_insecure_environment then
         minetest.register_globalstep(function(dtime)
             wait_timer = wait_timer + dtime
             if wait_timer > 0.5 then wait_timer = 0.5 end
+            timer_context = timer_context + dtime
+            if timer_context > 10 then timer_context = 10 end
             if udp and wait_timer >= 0.5 then
                 wait_timer = 0
                 local uid = nil
@@ -113,6 +116,10 @@ if minetest.request_insecure_environment then
                         --so register the client as position receiver
                         setClient(uid, nick, msg_or_ip, port_or_nil)
                         --minetest.chat_send_all("connected as: " .. data .. msg_or_ip, port_or_nil)
+                        --send the contect data to client
+                        local player = minetest.get_player_by_name(nick)
+                        local data_to_send = get_mumble_context(player)
+                        pcall(udp:sendto(data_to_send, msg_or_ip, port_or_nil))
                     end
                 else
                     --minetest.chat_send_all("nadica")
@@ -123,7 +130,6 @@ if minetest.request_insecure_environment then
                     local player = minetest.get_player_by_name(c.nick)
                     if player then
                         local data_to_send = getSpatialData(player)
-                        data_to_send = data_to_send..get_mumble_context(player)
                         if data_to_send then
                             pcall(udp:sendto(data_to_send, c.ip, c.port))
                         end

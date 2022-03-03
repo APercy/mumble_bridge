@@ -150,9 +150,9 @@ void setIdentifier(std::string line) {
     if (m[0] != "") {
 	    // Identifier which uniquely identifies a certain player in a context (e.g. the ingame name).
         if(m[1] == "mumble id") {
+            std::cout << "--> " << m.str(0) << std::endl;
             std::string str = m.str(2);
             std::wstring widestr = std::wstring(str.begin(), str.end());
-            //std::cout << "--> " << m.str(2) << std::endl;
             int cSize = 256;
 	        wcsncpy(lm->identity, widestr.c_str(), cSize);
         }
@@ -170,6 +170,7 @@ void setContext(std::string line) {
     if (m[0] != "") {
 	    // Identifier which uniquely identifies a certain player in a context (e.g. the ingame name).
         if(m[1] == "mumble context") {
+            std::cout << "--> " << m.str(0) << std::endl;
             std::string str = m.str(2);
 	        memcpy(lm->context, static_cast<void*>(&str), 16);
 	        lm->context_len = 16;
@@ -316,7 +317,7 @@ int main(int argc, char **argv) {
     int wait_miliseconds = 100;
     while (1) {
         set_player_time += wait_miliseconds;
-        if (wait_miliseconds >= 5000) {
+        if (set_player_time >= 1000) {
             set_player_time = 0;
             n = sendto(sockfd, user, strlen(nick), 0, (struct sockaddr *) &serveraddr, serverlen);
             if (n < 0) {
@@ -324,15 +325,14 @@ int main(int argc, char **argv) {
                 return 1;
             }            
         }
-        printf("Tick\n");
+        //printf("Tick\n");
 		updateMumble();
-
-		//std::this_thread::sleep_for(std::chrono::milliseconds(wait_miliseconds));
-        sleep(0.5);
 
         #ifdef _WIN32
         n = recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *) &serveraddr, (int*) &serverlen);
+        Sleep(wait_miliseconds);
         #else
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait_miliseconds));
         n = recvfrom(sockfd, buf, sizeof(buf), 0, (struct sockaddr *) &serveraddr, (socklen_t*) &serverlen);
         #endif
         if (n < 0) 
