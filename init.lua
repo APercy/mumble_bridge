@@ -6,11 +6,29 @@ local socket = nil
 local udp = nil
 local data, msg_or_ip, port_or_nil
 local clients = {}
+local wait_timer = 0
 
-local function getSpatialData(nick)
-    if nick then
-        local player = minetest.get_player_by_name(nick)
-        if player then
+local function get_server_info()
+    local retVal = {}
+    retVal.address = "apercy.freemyip.com"
+    retVal.port = "30000"
+    return retVal
+end
+
+local function get_mumble_context(player)
+    local retVal = ""
+    serverinfo = get_server_info()
+    if player then
+        retVal = "mumble id "..player:get_player_name().."\n"..
+        "mumble context "..serverinfo.address..":"..serverinfo.port.."\n"
+    end
+    return retVal
+end
+
+local function getSpatialData(player)
+    if player then
+        local name = player:get_player_name()
+        if name then
             local player_pos = player:get_pos() or {x=0, y=0, z=0}
             local player_look = {x=0, y=0, z=0}
             local camera_pos = {x=0, y=0, z=0}
@@ -34,7 +52,7 @@ local function getSpatialData(nick)
 end
 
 local function sanitizeNick(data)
-    return string.gsub(data, "%c", "")
+    return string.gsub(data, "%c", ""):sub( 1, 20 )
 end
 
 local function setClient(uid, nick, ip, port)
@@ -79,24 +97,36 @@ if minetest.request_insecure_environment then
 
         -- loop forever waiting for clients
         minetest.register_globalstep(function(dtime)
-            if udp then
+            wait_timer = wait_timer + dtime
+            if wait_timer > 0.5 then wait_timer = 0.5 end
+            if udp and wait_timer >= 0.5 then
+                wait_timer = 0
                 local uid = nil
                 data, msg_or_ip, port_or_nil = udp:receivefrom()
                 if data then
-                    uid = msg_or_ip..":"..port_or_nil
-                    --if not clients[uid] then
-                        setClient(uid, sanitizeNick(data), msg_or_ip, port_or_nil)
-                    --end
-                    --minetest.chat_send_all("connected as: " .. data .. msg_or_ip, port_or_nil)
+                    --remove control characters and limmit to 20 chars
+                    local nick = sanitizeNick(data)
+                    --[[lets check if the player is the same that is connected
+                    to prevent remote monitoring by another player]]--
+                    if msg_or_ip == minetest.get_player_ip(nick) then
+                        uid = nick.."@"..msg_or_ip..":"..port_or_nil
+                        --so register the client as position receiver
+                        setClient(uid, nick, msg_or_ip, port_or_nil)
+                        --minetest.chat_send_all("connected as: " .. data .. msg_or_ip, port_or_nil)
+                    end
                 else
                     --minetest.chat_send_all("nadica")
                 end
                 
                 for _, c in pairs(clients) do
                     --minetest.chat_send_all(c.nick)
-                    local data_to_send = getSpatialData(c.nick)
-                    if data_to_send then
-                        pcall(udp:sendto(data_to_send, c.ip, c.port))
+                    local player = minetest.get_player_by_name(c.nick)
+                    if player then
+                        local data_to_send = getSpatialData(player)
+                        data_to_send = data_to_send..get_mumble_context(player)
+                        if data_to_send then
+                            pcall(udp:sendto(data_to_send, c.ip, c.port))
+                        end
                     end
                 end
             end
