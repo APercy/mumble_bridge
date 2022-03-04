@@ -172,8 +172,11 @@ void setContext(std::string line) {
         if(m[1] == "mumble context") {
             std::cout << "--> " << m.str(0) << std::endl;
             std::string str = m.str(2);
-	        memcpy(lm->context, static_cast<void*>(&str), 16);
-	        lm->context_len = 16;
+            char *cstr = new char[str.length() + 1];
+            strcpy(cstr, str.c_str());
+	        memcpy(lm->context, cstr, 256);
+	        lm->context_len = 256; //16;
+            delete [] cstr;
         }
     }
 }

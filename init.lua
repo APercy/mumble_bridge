@@ -11,7 +11,7 @@ local timer_context = 0
 
 local function get_server_info()
     local retVal = {}
-    retVal.address = "your.server.address.here"
+    retVal.address = "apercy.freemyip.com"
     retVal.port = "30000"
     return retVal
 end
@@ -35,7 +35,7 @@ local function getSpatialData(player)
             local camera_pos = {x=0, y=0, z=0}
             local camera_look = {x=0, y=0, z=0}
 
-            camera_pos = player_pos
+            camera_pos = {x=player_pos.x, y=player_pos.y, z=player_pos.z}
             camera_pos.y = camera_pos.y + 1.5
             camera_look = player:get_look_dir()
             player_look = camera_look
