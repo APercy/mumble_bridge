@@ -1,8 +1,4 @@
-modname = minetest.get_current_modname()
-modpath = minetest.get_modpath(modname)
-local host, ip, port
-
-local socket = nil
+local port
 local udp = nil
 local data, msg_or_ip, port_or_nil
 local clients = {}
@@ -18,7 +14,7 @@ end
 
 local function get_mumble_context(player)
     local retVal = ""
-    serverinfo = get_server_info()
+    local serverinfo = get_server_info()
     if player then
         retVal = "mumble id "..player:get_player_name().."\n"..
         "mumble context "..serverinfo.address..":"..serverinfo.port.."\n"
@@ -52,18 +48,18 @@ local function getSpatialData(player)
     return nil
 end
 
-local function sanitizeNick(data)
-    return string.gsub(data, "%c", ""):sub( 1, 20 )
+local function sanitizeNick(data_received)
+    return string.gsub(data_received, "%c", ""):sub( 1, 20 )
 end
 
-local function setClient(uid, nick, ip, port)
+local function setClient(uid, data_nick, data_ip, data_port)
     for _, c in pairs(clients) do
-        if c.nick == nick then
+        if c.nick == data_nick then
             clients[uid] = nil
             break
         end
     end
-    clients[uid] = { nick = sanitizeNick(data),ip = msg_or_ip, port = port_or_nil }
+    clients[uid] = { nick = sanitizeNick(data_nick),ip = data_ip, port = data_port }
 end
 
 
@@ -73,22 +69,24 @@ if minetest.request_insecure_environment then
         --override package path to recoginze external folder
         local old_path = insecure_environment.package.path
         local old_cpath = insecure_environment.package.cpath
-        insecure_environment.package.path = insecure_environment.package.path.. ";" .. modpath .. "/external/?.lua"
-        insecure_environment.package.cpath = insecure_environment.package.cpath.. ";" .. modpath .. "/external/?.so"
+        
+        insecure_environment.package.path = insecure_environment.package.path.. ";" .. "external/?.lua"
+        insecure_environment.package.cpath = insecure_environment.package.cpath.. ";" .. "external/?.so"
         --overriding require to insecure require to allow modules to load dependencies
         local old_require = require
-        require = insecure_environment.require	
+        require = insecure_environment.require
 
         --load modules
-        socket = require("socket")
+        local socket = require("socket")
         --reset changes
         require = old_require
+        --reset changes
         insecure_environment.package.path = old_path
         insecure_environment.package.cpath = old_cpath
 
         -- find out ip
-        host, port = "localhost", 44000
-        ip = assert(socket.dns.toip(host))
+        port = 44000
+        --ip = assert(socket.dns.toip(host))
         -- create a new UDP object
         udp = assert(socket.udp())
         if udp then
@@ -102,6 +100,7 @@ if minetest.request_insecure_environment then
             if wait_timer > 0.5 then wait_timer = 0.5 end
             timer_context = timer_context + dtime
             if timer_context > 10 then timer_context = 10 end
+            
             if udp and wait_timer >= 0.5 then
                 wait_timer = 0
                 local uid = nil
@@ -121,8 +120,6 @@ if minetest.request_insecure_environment then
                         local data_to_send = get_mumble_context(player)
                         pcall(udp:sendto(data_to_send, msg_or_ip, port_or_nil))
                     end
-                else
-                    --minetest.chat_send_all("nadica")
                 end
                 
                 for _, c in pairs(clients) do
