@@ -76,18 +76,17 @@ if minetest.request_insecure_environment then
         require = insecure_environment.require
 
         --load modules
-        local socket = require("socket")
+        local socket = insecure_environment.require("socket")
         --reset changes
         require = old_require
-        --reset changes
         insecure_environment.package.path = old_path
         insecure_environment.package.cpath = old_cpath
 
         -- find out ip
         port = 44000
-        --ip = assert(socket.dns.toip(host))
+        --ip = _G.assert(socket.dns.toip(host))
         -- create a new UDP object
-        udp = assert(socket.udp())
+        udp = _G.assert(socket.udp())
         if udp then
             udp:settimeout(0)
             udp:setsockname('*', port)
@@ -120,18 +119,18 @@ minetest.register_globalstep(function(dtime)
                     --send the contect data to client
                     local player = minetest.get_player_by_name(nick)
                     local data_to_send = get_mumble_context(player)
-                    pcall(udp:sendto(data_to_send, msg_or_ip, port_or_nil))
+                    _G.pcall(udp:sendto(data_to_send, msg_or_ip, port_or_nil))
                 end
             end
             
-            for _, c in pairs(clients) do
+            for _, c in _G.pairs(clients) do
                 --minetest.chat_send_all(c.nick)
                 local player = minetest.get_player_by_name(c.nick)
                 if player then
                     --minetest.chat_send_all("ok")
                     local data_to_send = getSpatialData(player)
                     if data_to_send then
-                        pcall(udp:sendto(data_to_send, c.ip, c.port))
+                        _G.pcall(udp:sendto(data_to_send, c.ip, c.port))
                     end
                 end
             end

@@ -23,3 +23,5 @@ read_globals = {
 }
 
 ignore = {"611"}
+
+std = {read_globals = {"_G"}}
