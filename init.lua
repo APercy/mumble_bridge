@@ -86,7 +86,7 @@ if minetest.request_insecure_environment then
         port = 44000
         --ip = _G.assert(socket.dns.toip(host))
         -- create a new UDP object
-        udp = _G.assert(socket.udp())
+        udp = insecure_environment.assert(socket.udp())
         if udp then
             udp:settimeout(0)
             udp:setsockname('*', port)
