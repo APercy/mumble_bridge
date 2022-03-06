@@ -62,6 +62,33 @@ local function setClient(uid, data_nick, data_ip, data_port)
     clients[uid] = { nick = sanitizeNick(data_nick),ip = data_ip, port = data_port }
 end
 
+-- DS-minetest wrapper for require
+-- the same as `IE.require(...)`, but sets the env to IE
+local function require_with_IE_env(...)
+	local old_thread_env = insecure_environment.getfenv(0)
+
+	-- set env of thread
+	-- (the loader used by IE.require will probably use the thread env for
+	-- the loaded functions)
+	insecure_environment.setfenv(0, insecure_environment)
+
+	-- (IE.require's env is neither _G, nor IE. we need to leave it like this,
+	-- otherwise it won't find the loaders (it uses the global `loaders`, not
+	-- `package.loaders` btw. (see luajit/src/lib_package.c)))
+
+	-- we might be pcall()ed, so we need to pcall to make sure that we reset
+	-- the thread env afterwards
+	local ok, ret = insecure_environment.pcall(insecure_environment.require, ...)
+
+	-- reset env of thread
+	insecure_environment.setfenv(0, old_thread_env)
+
+	if not ok then
+		insecure_environment.error(ret)
+	end
+	return ret
+end
+
 -- require the socket and gets udp
 if minetest.request_insecure_environment then
      insecure_environment = minetest.request_insecure_environment()
@@ -76,7 +103,7 @@ if minetest.request_insecure_environment then
         require = insecure_environment.require
 
         --load modules
-        local socket = insecure_environment.require("socket")
+        local socket = require_with_IE_env("socket")
         --reset changes
         require = old_require
         insecure_environment.package.path = old_path
